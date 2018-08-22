@@ -137,6 +137,8 @@ public class GithubRepoPageProcessor implements PageProcessor {
 
 # 第二步：扩展框架
 
+    git checkout step-1-project-framework
+
 在我们真正的去实现具体的爬虫功能之前，我们需要先对原有的框架做拓展。
 这里，我们将全部注意力集中在如何将` PageProcessor `接口中的` process(Page page);`方法从具体实现中剥离出来。
 
@@ -272,4 +274,8 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 从名字你应该能知道，这个类的功能就是用来分析一个豆瓣图书页面的图书信息。
 类内部提供了一个缓存以供之后使用（如果对这里有疑惑也可以先不加）。
 
+#这一步可能需要仔细理解一下，之后我们会慢慢看到这么做的好处。你需要自己实现这些步骤。
 
+下一步，我们将具体实现如何对单个页面进行解析。
+
+    git checkout step-2-framework-extension
