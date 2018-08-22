@@ -264,6 +264,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 }
 ```
 
+最后，对DefaultSpider做一下功能的封装，包括爬虫的一些设置，以及返回爬虫实例。
+
+我们自己实现了一个类去实现ProcessStrategy接口：` OneBookProcessor.java`，
+从名字你应该能知道，这个类的功能就是用来分析一个豆瓣图书页面的图书信息。
+类内部提供了一个缓存以供之后使用（如果对这里有疑惑也可以先不加）。
 
 
 
