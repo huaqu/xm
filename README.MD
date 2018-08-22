@@ -87,9 +87,23 @@ public class GithubRepoPageProcessor implements PageProcessor {
     }
 ```
 我们之后会实现自己的` Pipeline `。
+
 ------
 ` PageProcessor ` 和 ` Pipeline `是我们需要重点关注的两个接口，当然webmagic还提供了各种爬虫需要的功能，
 比如代理、定时任务、JSON格式解析（针对Ajax请求）等等常用功能，交给你去探索啦！
+
+## 项目框架
+如果你查看` pom.xml `文件，你一定会一目了然：我们主要使用了Spring Boot和MyBatis作为我们的主要框架。
+
+我们预先设置了部分文件夹：
+* ` dao ` 用来负责与数据库打交道
+* ` model ` 数据模型都在这里
+* ` service ` 爬虫的主体逻辑都在这里
+* ` utils ` 各种工具类
+
+是不是很简单！
+
+### 设计模式
 
 
 
