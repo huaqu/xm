@@ -18,6 +18,6 @@ public class SpiderApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-    spiderService.getLotsOfBooks("");
+    spiderService.getLotsOfBooks("https://book.douban.com/subject/27001165/");
 	}
 }
