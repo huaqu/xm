@@ -276,6 +276,6 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 
 #这一步可能需要仔细理解一下，之后我们会慢慢看到这么做的好处。你需要自己实现这些步骤。
 
-下一步
+下一步，我们将具体实现如何对单个页面进行解析。
 
     git checkout step-2-framework-extension
