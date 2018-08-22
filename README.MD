@@ -343,9 +343,9 @@ webmagic认为我们应该在 Pipeline 中完全消费掉结果（存到数据�
 现在我们调用 SpiderService 中的` getLotsOfBooks() `，传入一个豆瓣图书的url，就可以获得一个爬取到的书籍数据了！是不是很棒！
 
 ### 阶段总结：
-我们将具体爬取数据的逻辑，与上层调用的逻辑，比较彻底的解耦了。SpiderService 持有了一个 DefaultSpider，
-而DefaultSpider里面没有具体的实现，具体的实现通过 OneBookProcessor 实现。OneBookProcessor 专注于书籍页面的解析算法，
-DefaultSpider 负责使用这个算法，并设置爬虫的各种性质。如果有了新的爬虫算法XXXProcessor，
+这一步里，使用到了**策略模式**，我们将具体爬取数据的逻辑，与上层调用的逻辑，比较彻底的解耦了。SpiderService 持有了一个 DefaultSpider，
+而DefaultSpider里面没有具体的实现，具体的实现由 OneBookProcessor 完成。OneBookProcessor 专注于书籍页面的解析算法，
+DefaultSpider 负责使用这个算法，并设置爬虫的各种性质。如果你的同事有了新的更快更高效的书籍信息提取算法XXXProcessor，
 只要实现了 ProcessStrategy ，就可以很方便的替换掉DefaultSpider里面的算法，而 DefaultSpider 一句代码也不用改。
 当然，好处不仅仅只有这些。接下来你能看到。
 
