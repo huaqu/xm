@@ -1,6 +1,7 @@
 package com.nowcoder.spider.service.spider.strategy;
 
 
+import com.nowcoder.spider.model.OriginBook;
 import java.util.HashMap;
 import java.util.Map;
 import us.codecraft.webmagic.Page;
@@ -36,8 +37,35 @@ public class OneBookProcessor implements ProcessStrategy {
    */
   @Override
   public void doProcess(Page page) {
+    OriginBook originBook = new OriginBook();//封装结果
+    cache.clear();
+
+    originBook
+        .setName(parseName(page))
+        .setImg(parseImg(page)) //img在ISBN_NUM之后
+        .setScore(parseScore(page));
+    page.putField("book", originBook);
+    System.out.println(originBook.getName() + "accomplish!");
 
   }
 
+  protected String parseName(Page page) {
+    return page.getHtml().xpath("//div[@id='wrapper']/h1/span/text()").toString();
+  }
 
+  protected String parseImg(Page page) {
+    return page.getHtml().xpath("//div[@id='mainpic']/a/img/@src").toString();
+  }
+
+  protected int parseScore(Page page) {
+    try {
+      String score = page.getHtml().xpath(
+          "//div[@id='interest_sectl']//strong[contains(@class, 'll') and contains(@class, 'rating_num')]/text()")
+          .toString();
+      score = score.replaceAll("[\\s|\\u00A0.]", "");
+      return Integer.valueOf(score);
+    } catch (Exception e) {
+      return -1;
+    }
+  }
 }
