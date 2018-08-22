@@ -184,16 +184,16 @@ public class DefaultSpider implements PageProcessor {
     
 }
 ```
-这里清晰的看到原先的爬虫主体 ` DefaultSpider ` 实现了 ` PageProcessor ` 的 ` process(Page page) `方法。
+这里清晰的看到原先的爬虫主体  DefaultSpider  实现了 process(Page page) 方法。
 但是这个方法里面却什么事情都没有干，而是通过持有一个 ` ProcessStrategy `的实例，
 通过调用 ` processStrategy.doProcess(page); `方法去实际实现爬虫的逻辑。
-这里我们不关心具体交给了哪个processStrategy，我们只知道process()方法会被webmagic框架调用执行就可以了，
+这里我们不关心具体交给了哪个processStrategy，我们只知道process()方法会被webmagic框架调用就可以了，
 当webmagic框架调用这里的process()方法时，实际上被我们“移花接木”的交给了processStrategy去做。
-而` ProcessStrategy `是一个接口，是可以在运行时替换的，这样就给我们带了很大的操作空间。
+而` ProcessStrategy `是一个接口，是可以在运行时被替换的。这样的设计给我们带了很大的操作空间。
 
-还记得我们上一步讲的吗？ **面向接口编程而不要面向实现编程**，体会一下同学们。
+还记得我们上一步讲的吗？ **面向接口编程而不要面向实现编程**，体会一下。
 
-我们可以继续观察DefaultSpider，` processStrategy.doProcess(page); `被执行前后都被 ` preProcess(page); ` 和 ` afterProcess(page); `方法包围，
+我们可以继续观察DefaultSpider，` processStrategy.doProcess(page); `执行前后都被 ` preProcess(page); ` 和 ` afterProcess(page); `方法包围，
 仔细看这两个方法：
 
 ``` java
@@ -203,9 +203,11 @@ public class DefaultSpider implements PageProcessor {
     protected void afterProcess(Page page) {
     }
 ```
-这两个方法什么都没有干。这是为了扩展留下一条后路，如果你完成了爬虫之后，
-你的同事突然发现需要再爬虫开始的时候更新数据库中的一条数据，并且需要再爬完之后记录一条日志，
-可是你有没有实现这些功能，怎么办呢？你的同事只用继承DefaultSpider类，然后自己实现上面这两个方法，就可以了。
+这两个方法什么都没有干。这是为了扩展留下一条后路，如果你完成了爬虫逻辑之后，
+你的同事需要在爬虫开始的时候，更新数据库中的一条数据，并且需要在爬完之后记录一条日志，
+可是你有没有实现这些功能，怎么办呢？
+
+你的同事只需要继承DefaultSpider类，然后自己实现上面这两个方法，就可以了。
 
 这样做的好处就是可以不用修改你原先的爬虫逻辑，免得改出bug了不是？
 
@@ -213,7 +215,7 @@ public class DefaultSpider implements PageProcessor {
 
 > 开闭原则：代码对扩展开放，对修改关闭。
 
-实际上这里的设计实现参考了Spring源码，请看：
+实际上这里的设计参考了Spring源码，请看：
 
 ``` java
 public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocumentReader {
