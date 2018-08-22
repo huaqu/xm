@@ -137,6 +137,8 @@ public class GithubRepoPageProcessor implements PageProcessor {
 
 # 第二步：扩展框架
 
+    git checkout step-1-project-framework
+
 在我们真正的去实现具体的爬虫功能之前，我们需要先对原有的框架做拓展。
 这里，我们将全部注意力集中在如何将` PageProcessor `接口中的` process(Page page);`方法从具体实现中剥离出来。
 
