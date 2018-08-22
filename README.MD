@@ -91,7 +91,8 @@ public class GithubRepoPageProcessor implements PageProcessor {
         return;
     }
 ```
-我们之后会实现自己的` Pipeline `。
+在代码里面我已经实现了两个默认实现，结合上面的介绍相信你很容易就能看懂。
+我们之后会实现自己的` Pipeline `以及对webmagic框架的扩展。
 
 ------
 ` PageProcessor ` 和 ` Pipeline `是我们需要重点关注的两个接口，当然webmagic还提供了各种爬虫需要的功能，
