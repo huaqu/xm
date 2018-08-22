@@ -272,4 +272,8 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 从名字你应该能知道，这个类的功能就是用来分析一个豆瓣图书页面的图书信息。
 类内部提供了一个缓存以供之后使用（如果对这里有疑惑也可以先不加）。
 
+#这一步可能需要仔细理解一下，之后我们会慢慢看到这么做的好处。你需要自己实现这些步骤。
 
+下一步
+
+    git checkout step-2-framework-extension
