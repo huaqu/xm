@@ -3,7 +3,9 @@
     git checkout step-1-project-framework
 
 本项目基于webmagic开源项目制作一个优雅高效的爬虫。最终以豆瓣图书为例，看看怎么一步步完善我们的爬虫。
+
 *--注意--*
+
 **本项目仅作为技术学习研究使用，禁止用于任何商业用途，禁止任何损害网站利益的行为**
 
 ## webmagic
@@ -128,7 +130,7 @@ public class GithubRepoPageProcessor implements PageProcessor {
 * 装饰器模式
 * 观察者模式
 
-#好了！我们开始吧！
+# 好了！我们开始吧！
 
     git checkout step-1-project-framework
 
