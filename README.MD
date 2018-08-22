@@ -7,15 +7,19 @@
 首先介绍一下webmagic开源项目。
 
 > 源码：https://github.com/code4craft/webmagic
+
 > 官网：http://webmagic.io/
 
 比较遗憾的是webmagic项目已经没有维护了，但是这不妨碍我们的学习，因为webmagic本身就已经足够完善了，
 而且其扩展性极好，是我们用java搭建爬虫的不二之选。
 
+### PageProcessor
 在webmagic中，你最需要关心的是` PageProcessor `接口，该接口中的` public void process(Page page); `方法是爬虫的核心方法，
 你可以看到这个方法中传入了一个` Page `参数，` Page `封装了一次爬取的所有信息，包括页面信息和请求信息。
 你需要做的是实现该接口，并将如何处理页面以及爬虫如何进行下一步迭代爬取的逻辑写入` public void process(Page page); `方法中。
 webmagic会持有一个你实现了` PageProcessor `接口的类的引用，并在webmagic封装的多线程环境下循环调用` process(Page page);`方法。
+在` process(Page page);`中，你可以使用` css、regex、xpath `三种方式来获取页面中你想要的元素（你甚至可以用‘$’符号去选取DOM）。
+这里面xpath使用的是作者基于Jsoup自己实现的Xsoup，也是一个很棒的项目。
 
 ``` java
 //示例如下：
@@ -46,3 +50,50 @@ public class GithubRepoPageProcessor implements PageProcessor {
     }
 }
 ```
+你可以调用` page.putField() `将你获取的结果存起来，` page `会持有一个` ResultItems `引用，
+用来存放爬取过程中的结果。调用` page.addTargetRequest() `可以存入一个url作为下一个爬取的页面地址。
+
+到这里你应该知道了，你的爬虫主要逻辑应该放在哪里了。
+
+### Pipeline
+
+` Pipeline `是又一常用接口，它帮你处理了你在` PageProcessor `中放入结果。
+但是这里有一个问题：既然在` PageProcessor `的方法` process(Page page);` 中已经能够获取到所有的结果了，
+为什么非要先存放起来，交由一个专门的` Pipeline `去处理呢？这里引用一段官方的解释：
+
+> 可以看到，Pipeline其实就是将PageProcessor抽取的结果，继续进行了处理的，其实在Pipeline中完成的功能，你基本上也可以直接在PageProcessor实现，那么为什么会有Pipeline？有几个原因：
+
+> 1.为了模块分离。“页面抽取”和“后处理、持久化”是爬虫的两个阶段，将其分离开来，一个是代码结构比较清晰，另一个是以后也可能将其处理过程分开，分开在独立的线程以至于不同的机器执行。
+
+> 2.Pipeline的功能比较固定，更容易做成通用组件。每个页面的抽取方式千变万化，但是后续处理方式则比较固定，例如保存到文件、保存到数据库这种操作，这些对所有页面都是通用的。WebMagic中就已经提供了控制台输出、保存到文件、保存为JSON格式的文件几种通用的Pipeline。
+
+你可以设置很多自定义的Pipeline，webmagic会在每次完成一个页面的爬取工作后，按顺序调用所有注册的Pipeline。
+``` java
+    private void onDownloadSuccess(Request request, Page page) {
+        if (site.getAcceptStatCode().contains(page.getStatusCode())){
+            pageProcessor.process(page);
+            extractAndAddRequests(page, spawnUrl);
+            if (!page.getResultItems().isSkip()) {
+            //这里循环调用了所有注册的Pipeline
+                for (Pipeline pipeline : pipelines) {
+                    pipeline.process(page.getResultItems(), this);
+                }
+            }
+        } else {
+            logger.info("page status code error, page {} , code: {}", request.getUrl(), page.getStatusCode());
+        }
+        sleep(site.getSleepTime());
+        return;
+    }
+```
+我们之后会实现自己的` Pipeline `。
+------
+` PageProcessor ` 和 ` Pipeline `是我们需要重点关注的两个接口，当然webmagic还提供了各种爬虫需要的功能，
+比如代理、定时任务、JSON格式解析（针对Ajax请求）等等常用功能，交给你去探索啦！
+
+
+
+
+
+
+
