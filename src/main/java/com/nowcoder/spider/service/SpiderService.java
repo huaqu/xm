@@ -1,8 +1,9 @@
 package com.nowcoder.spider.service;
 
 import com.nowcoder.spider.service.spider.DefaultSpider;
+import com.nowcoder.spider.service.spider.strategy.OneBookProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
 /**
@@ -11,11 +12,14 @@ import us.codecraft.webmagic.pipeline.ConsolePipeline;
 @Service
 public class SpiderService {
 
-  public void getLotsOfBooks() {
-    String url = "";
+  @Autowired
+  private DefaultSpider defaultSpider;
+
+  public void getLotsOfBooks(String beginUrl) {
     try {
-      Spider.create(new DefaultSpider())
-          .addUrl(url)
+      defaultSpider.setProcessStrategy(new OneBookProcessor());
+      defaultSpider.getSpider()
+          .addUrl(beginUrl)
           .addPipeline(new ConsolePipeline())
           .thread(1)
           .run();
