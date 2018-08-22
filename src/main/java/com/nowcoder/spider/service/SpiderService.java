@@ -1,11 +1,10 @@
 package com.nowcoder.spider.service;
 
-import com.nowcoder.spider.model.OriginBook;
 import com.nowcoder.spider.service.spider.DefaultSpider;
-import com.nowcoder.spider.service.spider.pipeline.CallablePipeline;
 import com.nowcoder.spider.service.spider.strategy.OneBookProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import us.codecraft.webmagic.pipeline.ConsolePipeline;
 
 /**
  * Created by nowcoder on 2018/08/16 下午5:23
@@ -16,18 +15,15 @@ public class SpiderService {
   @Autowired
   private DefaultSpider defaultSpider;
 
-  @Autowired
-  private CallablePipeline pipeline;
-
   public void getLotsOfBooks(String beginUrl) {
     try {
       defaultSpider.setProcessStrategy(new OneBookProcessor());
       defaultSpider.getSpider()
           .addUrl(beginUrl)
-          .addPipeline(pipeline)
+          .addPipeline(new ConsolePipeline())
           .thread(1)
           .run();
-      OriginBook book = (OriginBook) pipeline.getResult();
+
     } catch (Exception e) {
       e.printStackTrace();
     }
