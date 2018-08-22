@@ -209,7 +209,7 @@ public class DefaultSpider implements PageProcessor {
 你的同事需要在爬虫开始的时候，更新数据库中的一条数据，并且需要在爬完之后记录一条日志，
 可是你有没有实现这些功能，怎么办呢？
 
-你的同事只需要继承DefaultSpider类，然后自己实现上面这两个方法，就可以了。
+你的同事只需要继承DefaultSpider类，然后自己重写上面这两个方法，就可以了。
 
 这样做的好处就是可以不用修改你原先的爬虫逻辑，免得改出bug了不是？
 
