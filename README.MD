@@ -135,3 +135,141 @@ public class GithubRepoPageProcessor implements PageProcessor {
 
     git checkout step-1-project-framework
 
+# 第二步：扩展框架
+
+在我们真正的去实现具体的爬虫功能之前，我们需要先对原有的框架做拓展。
+这里，我们将全部注意力集中在如何将` PageProcessor `接口中的` process(Page page);`方法从具体实现中剥离出来。
+
+## 策略模式
+我们在service.spider包下新增了一个strategy包，用来存放我们所有的策略。
+
+首先是我们的策略总接口：
+
+``` java
+public interface ProcessStrategy {
+
+    /**
+     * 爬虫具体执行的方法 {@link Page}
+     */
+    void doProcess(Page page);
+
+}
+```
+结合` DefaultSpider `中的代码分析：
+
+``` java
+public class DefaultSpider implements PageProcessor {
+
+    protected ProcessStrategy processStrategy;
+
+    public void setProcessStrategy(ProcessStrategy processStrategy) {
+        this.processStrategy = processStrategy;
+    }
+    
+    ...
+    
+    /*--- 实现PageProcessor中的方法 ---*/
+    @Override
+    public void process(Page page) {
+    
+        if(processStrategy == null)
+            throw new NullPointerException();
+    
+        preProcess(page);
+        processStrategy.doProcess(page);
+        afterProcess(page);
+    }
+    
+    ...
+    
+}
+```
+这里清晰的看到原先的爬虫主体  DefaultSpider  实现了 process(Page page) 方法。
+但是这个方法里面却什么事情都没有干，而是通过持有一个 ` ProcessStrategy `的实例，
+通过调用 ` processStrategy.doProcess(page); `方法去实际实现爬虫的逻辑。
+这里我们不关心具体交给了哪个processStrategy，我们只知道process()方法会被webmagic框架调用就可以了，
+当webmagic框架调用这里的process()方法时，实际上被我们“移花接木”的交给了processStrategy去做。
+而` ProcessStrategy `是一个接口，是可以在运行时被替换的。这样的设计给我们带了很大的操作空间。
+
+还记得我们上一步讲的吗？ **面向接口编程而不要面向实现编程**，体会一下。
+
+我们可以继续观察DefaultSpider，` processStrategy.doProcess(page); `执行前后都被 ` preProcess(page); ` 和 ` afterProcess(page); `方法包围，
+仔细看这两个方法：
+
+``` java
+    protected void preProcess(Page page) {
+    }
+    
+    protected void afterProcess(Page page) {
+    }
+```
+这两个方法什么都没有干。这是为了扩展留下一条后路，如果你完成了爬虫逻辑之后，
+你的同事需要在爬虫开始的时候，更新数据库中的一条数据，并且需要在爬完之后记录一条日志，
+可是你有没有实现这些功能，怎么办呢？
+
+你的同事只需要继承DefaultSpider类，然后自己实现上面这两个方法，就可以了。
+
+这样做的好处就是可以不用修改你原先的爬虫逻辑，免得改出bug了不是？
+
+这其实是设计模式中的另一条原则：
+
+> 开闭原则：代码对扩展开放，对修改关闭。
+
+实际上这里的设计参考了Spring源码，请看：
+
+``` java
+public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocumentReader {
+
+    ...
+    
+    /**
+	 * Register each bean definition within the given root {@code <beans/>} element.
+	 */
+	@SuppressWarnings("deprecation")  // for Environment.acceptsProfiles(String...)
+	protected void doRegisterBeanDefinitions(Element root) {
+		// Any nested <beans> elements will cause recursion in this method. In
+		// order to propagate and preserve <beans> default-* attributes correctly,
+		// keep track of the current (parent) delegate, which may be null. Create
+		// the new (child) delegate with a reference to the parent for fallback purposes,
+		// then ultimately reset this.delegate back to its original (parent) reference.
+		// this behavior emulates a stack of delegates without actually necessitating one.
+		BeanDefinitionParserDelegate parent = this.delegate;
+		this.delegate = createDelegate(getReaderContext(), root, parent);
+
+		if (this.delegate.isDefaultNamespace(root)) {
+			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
+			if (StringUtils.hasText(profileSpec)) {
+				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(
+						profileSpec, BeanDefinitionParserDelegate.MULTI_VALUE_ATTRIBUTE_DELIMITERS);
+				// We cannot use Profiles.of(...) since profile expressions are not supported
+				// in XML config. See SPR-12458 for details.
+				if (!getReaderContext().getEnvironment().acceptsProfiles(specifiedProfiles)) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Skipped XML bean definition file due to specified profiles [" + profileSpec +
+								"] not matching: " + getReaderContext().getResource());
+					}
+					return;
+				}
+			}
+		}
+
+        //在这里，看到了吗？
+		preProcessXml(root);
+		parseBeanDefinitions(root, this.delegate);
+		postProcessXml(root);
+
+		this.delegate = parent;
+	}
+	
+	...
+	
+}
+```
+
+最后，对DefaultSpider做一下功能的封装，包括爬虫的一些设置，以及返回爬虫实例。
+
+我们自己实现了一个类去实现ProcessStrategy接口：` OneBookProcessor.java`，
+从名字你应该能知道，这个类的功能就是用来分析一个豆瓣图书页面的图书信息。
+类内部提供了一个缓存以供之后使用（如果对这里有疑惑也可以先不加）。
+
+
