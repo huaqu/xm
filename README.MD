@@ -137,8 +137,8 @@ public class GithubRepoPageProcessor implements PageProcessor {
 
 # 第二步：扩展框架
 
-在我们真正的去实现具体的爬虫功能的时候，我们需要先对原有的框架做拓展。
-这我们将注意力全部集中在如何将` PageProcessor `接口的` process(Page page);`方法中的具体实现剥离出来。
+在我们真正的去实现具体的爬虫功能之前，我们需要先对原有的框架做拓展。
+这里，我们将全部注意力集中在如何将` PageProcessor `接口中的` process(Page page);`方法从具体实现中剥离出来。
 
 ## 策略模式
 我们在service.spider包下新增了一个strategy包，用来存放我们所有的策略。
@@ -155,7 +155,7 @@ public interface ProcessStrategy {
 
 }
 ```
-结合` DefaultSpider `中的代码查看：
+结合` DefaultSpider `中的代码分析：
 
 ``` java
 public class DefaultSpider implements PageProcessor {
@@ -269,8 +269,5 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 我们自己实现了一个类去实现ProcessStrategy接口：` OneBookProcessor.java`，
 从名字你应该能知道，这个类的功能就是用来分析一个豆瓣图书页面的图书信息。
 类内部提供了一个缓存以供之后使用（如果对这里有疑惑也可以先不加）。
-
-
-
 
 
