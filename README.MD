@@ -444,7 +444,7 @@ public class IteratorProcessor extends FilterProcessor {
 
 >   "https://book.douban.com/subject/[0-9]+/?"
 
-图书的上一级一定是以"https://book.douban.com/tag/"开头，这一点是我们之前分析页面结构得到的信息。
+图书的上一级一定是以"https://book.douban.com/tag/" 开头，这一点是我们之前分析页面结构得到的信息。
 这样，我们将一个上级页面中所有的单本图书url放入了 TargetRequest 之中，webmagic回循环从 TargetRequest 中去取一个url去爬取。
 
 这一步我们设置了 ` page.setSkip(true); `，意味着，这一步不需要经过 Pipeline 去处理。
@@ -454,7 +454,7 @@ public class IteratorProcessor extends FilterProcessor {
 这里的逻辑比较复杂，比较难想清楚。建议类比于树的前序遍历去理解，将网页不同深度的url对应为一棵树，
 最开始的入口页面为根节点，单个的图书页面的为叶子节点。
 
-这样，我们就完成了对一个https://book.douban.com/tag/开头的页面的图书爬取。
+这样，我们就完成了对一个https://book.douban.com/tag/ 开头的页面的图书爬取。
 
 当然，网页的结构可能有很多层，往往需要进入好几层，才能真正找到需要的数据页面，你可以延续这个思路，
 在 IteratorProcessor 外面再加几层装饰，完成多层次的爬取工作，每一层只用专注于当前层次的网页的爬取和信息收集工作。
@@ -466,7 +466,7 @@ public class IteratorProcessor extends FilterProcessor {
 
 ` TargetRequests `内部实现实际上是一个队列，同学们需要考虑url的放入顺序问题。
 
-### 到这里，我们单本图书的爬取，以及多本图书的迭代爬取都已经完成了！
+### 到这里，我们单本图书的爬取，以及多本图书的迭代爬取都已经完成了！你需要自己去实现所有的逻辑，这点至关重要。
 接下来你需要思考一个问题：
 
 如果你的同事在很多其他的地方，需要用到Pipeline里面的结果，而且他们不愿意调用 Pipeline 的 getResult 方法（因为你的结果可能还没有准备好呢），
