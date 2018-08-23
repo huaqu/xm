@@ -1,6 +1,7 @@
 package com.nowcoder.spider.service.spider.pipeline;
 
 import com.nowcoder.spider.model.OriginBook;
+import java.util.Vector;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import us.codecraft.webmagic.ResultItems;
@@ -21,20 +22,22 @@ public class OriginBookPipeline implements CallablePipeline {
   private OriginBook originBook;
 
   public OriginBookPipeline() {
-    originBook = new OriginBook();
+    obs = new Vector<>();
   }
 
   @Override
   public void process(ResultItems resultItems, Task task) {
     originBook = resultItems.get("book");
     originBook.setOriginUrl(task.getSite().getDomain());
+    notifyObservers(getResult());
   }
 
   @Override
   public Object getResult() throws NullPointerException {
 
-    if (!isQualifier())
+    if (!isQualifier()) {
       throw new NullPointerException("爬取结果不全");
+    }
 
     return originBook;
   }
@@ -53,5 +56,36 @@ public class OriginBookPipeline implements CallablePipeline {
 //        String.valueOf(originBook.getScore())
         "123"
     );
+  }
+
+
+  /*--  implements Observable  --*/
+  private Vector<Observer> obs;
+
+  @Override
+  public synchronized void addObserver(Observer o) {
+    if (o == null) {
+      throw new NullPointerException();
+    }
+    if (!obs.contains(o)) {
+      obs.addElement(o);
+    }
+  }
+
+  @Override
+  public synchronized void deleteObserver(Observer o) {
+    obs.removeElement(o);
+  }
+
+  @Override
+  public void notifyObservers(Object arg) {
+    Object[] arrLocal;
+
+    synchronized (this) {
+      arrLocal = obs.toArray();
+    }
+    for (int i = arrLocal.length - 1; i >= 0; i--) {
+      ((Observer) arrLocal[i]).update(this, arg);
+    }
   }
 }
