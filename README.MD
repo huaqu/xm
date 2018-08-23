@@ -374,7 +374,7 @@ DefaultSpider 负责使用这个算法，并设置爬虫的各种性质。如果
 我们没有任何理由去修改它--那样只能让你的代码越来越糟。所以你应该将你的目光从 OneBookProcessor 身上移开，去寻找其他的方法。
 
 仔细思考就会发现，无论如何，爬虫最后一定会落实到 OneBookProcessor 身上，去对单个页面进行爬取，我们真正需要的是，
-设计一种迭代策略，然后在迭代的最后一步调用 OneBookProcessor::process(Page page)（"::"符号是java8的语法，这里指代一个方法）。
+设计一种迭代策略，然后在迭代的最后一步调用 OneBookProcessor::doProcess(Page page)（"::"符号是java8的语法，这里指代一个方法）。
 
 从我们的分析可以看到，迭代的策略一定需要持有一个 OneBookProcessor 实例，用于调用真正爬取单个页面的方法。
 
@@ -406,8 +406,63 @@ DefaultSpider 负责使用这个算法，并设置爬虫的各种性质。如果
 
 ### 重头戏 IteratorProcessor
 
+直接上代码
+``` java 
+/**
+ * 装饰者，用来装饰book的迭代爬取功能
+ */
+public class IteratorProcessor extends FilterProcessor {
+    
+    private Set<String> requestCache = new HashSet<>(32);
+    
+    public IteratorProcessor() {
+        super(new OneBookProcessor());
+    }
+    
+    public IteratorProcessor(ProcessStrategy processStrategy) {
+        super(processStrategy);
+    }
+    
+    @Override
+    public void doProcess(Page page) {
+        if (StringUtils.startsWith(page.getRequest().getUrl(), "https://book.douban.com/tag/")) {
+            requestCache.addAll(page.getHtml().regex("https://book.douban.com/subject/[0-9]+/?").all());
+            page.addTargetRequests(new ArrayList<>(requestCache));
+            requestCache.clear();
+            page.setSkip(true);
+        } else {
+            processStrategy.doProcess(page);
+        }
+    }
+}
+```
+首先，IteratorProcessor 提供了两个重载的构造方法，其中一个默认持有了一个 OneBookProcessor ，
+如果你有其他的对于单页面的爬取实现，可以使用第二个构造方法。
 
+主体方法部分 doProcess 也非常好懂，首先我们根据当前爬取的页面类型判断，如果是图书的上一级页面，
+我们就去分析页面里面含有的单本图书的url，单本图书的url的正则为
 
+>   "https://book.douban.com/subject/[0-9]+/?"
 
+图书的上一级一定是以"https://book.douban.com/tag/"开头，这一点是我们之前分析页面结构得到的信息。
+这样，我们将一个上级页面中所有的单本图书url放入了 TargetRequest 之中，webmagic回循环从 TargetRequest 中去取一个url去爬取。
 
+这一步我们设置了 ` page.setSkip(true); `意味着，这一步不需要经过 Pipeline 去处理。
+
+如果不是上级页面，则调用 ` processStrategy.doProcess(page) ` ，也就是 OneBookProcessor 。
+这里的逻辑比较复杂，比较难想清楚。建议类比于树的前序遍历去理解，将网页不同深度的url对应为一棵树，
+最开始的入口页面为根节点，单个的图书页面的为叶子节点。
+
+这样，我们就完成了对一个https://book.douban.com/tag/开头的页面的图书爬取。
+
+当然，网页的结构可能有很多层，往往需要进入好几层，才能真正找到需要的数据页面，你可以延续这个思路，
+在 IteratorProcessor 外面再加几层装饰，完成多层次的爬取工作，每一层只用专注于一层网页的爬取和信息收集工作，
+如果这层的信息（往往是多个url）收集完毕，调用 ` page.addTargetRequests ` 方法之后，就可以交给更深层的 ProcessorStrategy 去完成工作了。
+
+### 总结：这样做的好处就是，扩展性非常的良好。每一层都只关心这一层的逻辑，只要这一层的实现完毕，就不用再操心这一层的逻辑了。
+最后需要注意的一点就是，只要不想交给 Pipeline 的结果，都需要调用 ` page.setSkip(true) `。
+
+下一步：我们将利用观察者模式扩展 Pipeline ，使得结果可以主动推送到需要结果的类。
+
+    git checkout step-5-pipeline-extension
 
