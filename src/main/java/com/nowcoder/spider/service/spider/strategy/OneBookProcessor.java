@@ -42,10 +42,10 @@ public class OneBookProcessor implements ProcessStrategy {
 
     originBook
         .setName(parseName(page))
-        .setImg(parseImg(page)) //img在ISBN_NUM之后
+        .setImg(parseImg(page))
         .setScore(parseScore(page));
     page.putField("book", originBook);
-    System.out.println(originBook.getName() + "accomplish!");
+    System.out.println(originBook.getName() + " accomplish!");
 
   }
 
