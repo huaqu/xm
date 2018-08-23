@@ -612,6 +612,7 @@ public class ObserverA implements Observer {
             System.out.println("ObserverA " + ((OriginBook) arg).getScore());
     }
 }
+```
 
 然后在 SpiderService 中为 Pipeline 注册ObserverA 和 ObserverB。
 
@@ -637,7 +638,7 @@ public class ObserverA implements Observer {
 并且这个模块也知道合适的调用时机，那么可以直接调用 getResult 得到想要的结果数据。
 
 ### 题外话：JDK 提供了现成的观察者模式的类和接口，我们在具体实现上，也是直接参考的 JDK 的实现。
-### 但是 JDK 将 Observable 直接封装成了一个类，而且没有实现任何接口。这很显然是在面向实现编程，而不是面向接口，是一个比较糟糕的设计。而且我们之前说过，如果一个类想具有 Observable 的特性，那么它必须继承 Observable，这样做的代价太大，因为java是单继承。java.util.Observable更像是一个示例，而不是一个可以用的接口。所以我们这里重新设计了 Observable 接口。
+### 但是 JDK 将 Observable 直接封装成了一个类，而且没有实现任何接口。很显然，这是面向实现编程，而不是面向接口，是一个比较糟糕的设计。而且我们之前说过，如果一个类想具有 Observable 的特性，那么它必须继承 Observable，这样做的代价太大，因为java是单继承。java.util.Observable更像是一个示例，而不是一个可以用的接口。所以我们这里重新设计了 Observable 接口。
 
 # 好了！你已经完成了非常重要的学习，以上的代码请一定自己完成！让我们复习一下：
 
