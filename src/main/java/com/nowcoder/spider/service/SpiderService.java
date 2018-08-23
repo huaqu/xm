@@ -2,6 +2,8 @@ package com.nowcoder.spider.service;
 
 import com.nowcoder.spider.model.OriginBook;
 import com.nowcoder.spider.service.spider.DefaultSpider;
+import com.nowcoder.spider.service.spider.observers.ObserverA;
+import com.nowcoder.spider.service.spider.observers.ObserverB;
 import com.nowcoder.spider.service.spider.pipeline.CallablePipeline;
 import com.nowcoder.spider.service.spider.strategy.IteratorProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,9 @@ public class SpiderService {
 
   public void getLotsOfBooks(String beginUrl) {
     try {
+
+      pipeline.addObserver(new ObserverA());
+      pipeline.addObserver(new ObserverB());
       defaultSpider.setProcessStrategy(new IteratorProcessor());
       defaultSpider.getSpider()
           .addUrl(beginUrl)
