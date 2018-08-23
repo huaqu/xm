@@ -477,3 +477,176 @@ public class IteratorProcessor extends FilterProcessor {
 
     git checkout step-5-pipeline-extension
 
+# 第五步：利用观察者模式对Pipeline进行扩展。
+
+    git checkout step-5-pipeline-extension
+
+前面已经介绍过了，Pipeline会在一个爬取任务完成后被调用。
+对结果的处理逻辑相对简单的情形下（比如直接存入数据库，或者打印到控制台等，都认为是比较简单的逻辑），
+我们可以将处理逻辑直接写进 Pipeline 中。但是在很多情况下，事情远没有这么简单。
+有的时候，Pipeline中获得的结果只能作为初步的结果，需要进行进一步的加工、检错、包装等等工作，
+在一个项目环境中，这个初步的结果很可能被很多其他的模块引用。
+
+比如对于你爬取的数据 result，项目中的A、B、C三个模块都需要获取到 result ，
+虽然在我们扩展的 CallablePipeline 中提供了一个获取结果的方法 getResult，
+但是A、B、C并不知道什么时候去调用 getResult，因为 Pipeline 可能根本还没有将结果准备好。
+
+一种比较好的思路就是当 Pipeline 把结果准备好的时候，主动去推送结果。顺着这个思路，
+我们使用**观察者模式**对其进行扩展。
+
+## 观察者模式
+
+首先，我们准备的两个接口：
+
+> Observable.java
+
+``` java 
+/**
+ * java.util.Observable 不是一个好的设计。如果需要拥有Observable功能而去
+ * 继承一个类的话，代价太沉重。我重新设计的接口，留给具体的类去实现。
+ */
+public interface Observable {
+    //增加一个观察者
+    void addObserver(Observer o);
+    //删除一个观察者
+    void deleteObserver(Observer o);
+    //通知我们所有的观察者
+    void notifyObservers(Object arg);
+}
+```
+
+> Observer.java
+
+``` java
+/**
+ * 参考{@link java.util.Observer}设计
+ */
+public interface Observer {
+    //观察者被通知的方法
+    void update(Observable o, Object arg);
+
+}
+```
+
+### 同学们可以思考一下，Pipeline 还有 A、B、C三个模块谁是Observable、谁是Observer。
+
+好了，毫无疑问 Pipeline 应该去实现 Observable 接口。
+
+现在问题又来了，我们希望所有实现了 CallablePipeline 接口的 Pipeline 的类都是 Observable，
+怎么做到呢？直接将 Observable 接口中的方法放进 CallablePipeline 中吗？这时你违反了设计模式中的什么原则呢？
+
+java的接口是允许多继承的，我们直接让 CallablePipeline 继承 Observable 即可。
+理解这里非常重要，你必须明白我们为什么必须让 CallablePipeline 继承 Observable，
+而不是这么做：
+
+* 让实现了 CallablePipeline 的类同时实现 Observable
+* 将 Observable 设计为一个类，让需要 Observable 功能的类继承 Observable。
+* 将 Observable 里面的方法全部放进 CallablePipeline。
+
+### 以上三种方案为什么不可以呢？交给你去探索。
+
+好了，我们在 OriginBookPipeline 里面实现 CallablePipeline 的所有方法：
+
+``` java
+@Service
+public class OriginBookPipeline implements CallablePipeline {
+    
+    ...
+    
+    @Override
+    public void process(ResultItems resultItems, Task task) {
+        originBook = resultItems.get("book");
+        originBook.setOriginUrl(task.getSite().getDomain());
+        notifyObservers(getResult());
+    }
+    
+    ...
+    
+    /*--  implements Observable  --*/
+    private Vector<Observer> obs;
+    
+    @Override
+    public synchronized void addObserver(Observer o) {
+        if (o == null) {
+            throw new NullPointerException();
+        }
+        if (!obs.contains(o)) {
+            obs.addElement(o);
+        }
+    }
+    
+    @Override
+    public synchronized void deleteObserver(Observer o) {
+        obs.removeElement(o);
+    }
+    
+    @Override
+    public void notifyObservers(Object arg) {
+        Object[] arrLocal;
+    
+        synchronized (this) {
+            arrLocal = obs.toArray();
+        }
+        for (int i = arrLocal.length - 1; i >= 0; i--) {
+            ((Observer) arrLocal[i]).update(this, arg);
+        }
+    }
+}
+``` 
+
+这里实现了 Observable 的三个方法。并使用了 ` Vector<Observer> obs ` 保存所有的观察者。
+
+并且在 process 方法中调用了 notifyObservers 方法，并将结果（originBook）作为参数传入其中。
+
+这里还是有必要对 Observable 中被实现的三个方法做一下解释：
+
+* ` addObserver ` 注册一个观察者，不能为空。这个方法是同步的。
+* ` deleteObserver ` 删除一个观察者。这个方法是同步的。
+* ` notifyObservers(Object arg) ` 这个方法是核心，当 notifyObservers 被触发后，通知所有注册的观察者。` arg `封装了通知的信息。
+
+这样一来就很明白了，我们先实现两个简单的 Observer ，ObserverA 和 ObserverB。
+
+``` java 
+public class ObserverA implements Observer {
+
+    @Override
+    public void update(Observable o, Object arg) {
+        if (o instanceof OriginBookPipeline)
+            //TODO with arg
+            System.out.println("ObserverA " + ((OriginBook) arg).getScore());
+    }
+}
+
+然后在 SpiderService 中为 Pipeline 注册ObserverA 和 ObserverB。
+
+``` java
+    public void getLotsOfBooks(String beginUrl) {
+
+        ...
+    
+        pipeline.addObserver(new ObserverA());
+        pipeline.addObserver(new ObserverB());
+        defaultSpider.setProcessStrategy(new IteratorProcessor());
+        ...
+        
+    }
+```
+
+好了，运行一下你的程序吧！看看 ObserverA 和 ObserverB 是否被推送了正确的结果！
+
+如果你的模块 C 也需要被推送结果，只需要让 C 像 A、B 一样实现 Observer 接口，
+并通过` pipeline.addObserver(new ObserverC()) ` 进行注册。之后，一旦 Pipeline 里面有了新的结果，就会通知所有的观察者！
+
+当然我们同时为 Pipeline 保留了 getResult 方法，如果某个模块认为注册成为 Observer 太复杂，
+并且这个模块也知道合适的调用时机，那么可以直接调用 getResult 得到想要的结果数据。
+
+### 题外话：JDK 提供了现成的观察者模式的类和接口，我们在具体实现上，也是直接参考的 JDK 的实现。
+### 但是 JDK 将 Observable 直接封装成了一个类，而且没有实现任何接口。这很显然是在面向实现编程，而不是面向接口，是一个比较糟糕的设计。而且我们之前说过，如果一个类想具有 Observable 的特性，那么它必须继承 Observable，这样做的代价太大，因为java是单继承。java.util.Observable更像是一个示例，而不是一个可以用的接口。所以我们这里重新设计了 Observable 接口。
+
+# 好了！你已经完成了非常重要的学习，以上的代码请一定自己完成！让我们复习一下：
+
+### 1.首先，我们在扩展框架和实现我们的功能的过程中，始终遵循着一条原则：不去修改已经完成的部分，也就是开闭原则。
+### 2.然后，我们尽力去面向接口编程，因为这样会给你的程序带来极好的可扩展性和解耦。
+### 3.我们在三个不同的地方使用了三种设计模式，演示了，如何对一个既有的框架进行优雅的扩展。
+--------
+**在最后留下了一个问题，一个难题，需要你们自己去解决：我们为了将目光集中在，如何利用设计模式扩展webmagic框架上，所以始终以单线程设计和运行我们例子，并没有做任何多线程安全控制。多线程控制本身就是一个巨大的话题，这里无论如何没有空间去展开。如果你对此感兴趣的话，你可以自己去完成并发安全的部分！而且我强烈建议你那样去做。（我们以后会推出多线程相关的项目）**
