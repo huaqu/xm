@@ -357,3 +357,57 @@ DefaultSpider 负责使用这个算法，并设置爬虫的各种性质。如果
 
     git checkout step-4-books-iterator
 
+# 第四步：图书的迭代爬取
+
+    git checkout step-4-books-iterator
+    
+在前面几步里面，我们详细讲解了如何利用**策略模式**，将 process(Page page) 方法的实现逻辑剥离出来。
+这一步里面，我们将利用 **装饰器模式** 对功能进行扩展。
+
+可是，一个爬虫往往不会单单去爬取一个页面，往往会根据一个页面或者某种规则去进行迭代爬取。现在，
+我们已经实现了单个页面的爬取，那我们如何实现爬虫的迭代呢？在 OneBookProcessor 里面写一个循环呀！如果这句话是同学们的第一反应的话，
+那你应该重新去体会：
+
+> 面向接口编程，不要面向实现编程。以及，对修改关闭，对扩展开方
+
+如果我们又去修改 OneBookProcessor 里面的代码，实在不能称得上优雅，因为 OneBookProcessor 已经完美的实现了它的使命--对单个图书页面的爬取，
+我们没有任何理由去修改它--那样只能让你的代码越来越糟。所以你应该将你的目光从 OneBookProcessor 身上移开，去寻找其他的方法。
+
+仔细思考就会发现，无论如何，爬虫最后一定会落实到 OneBookProcessor 身上，去对单个页面进行爬取，我们真正需要的是，
+设计一种迭代策略，然后在迭代的最后一步调用 OneBookProcessor::process(Page page)（"::"符号是java8的语法，这里指代一个方法）。
+
+从我们的分析可以看到，迭代的策略一定需要持有一个 OneBookProcessor 实例，用于调用真正爬取单个页面的方法。
+
+## 装饰器模式（参考java.io包的实现）
+
+首先我们需要一个伪实现类，该类主要的作用是作为一个标识，所有继承于这个类的都是装饰器。代码如下
+
+``` java
+    /**
+     * FilterProcessor 是ProcessStrategy的装饰类，用来扩展ProcessStrategy的爬虫方法。
+     * 这是一个伪实现类，真正的装饰类需要继承这个类。
+     * 设计参考 {@link java.io.FilterInputStream}
+     */
+    public class FilterProcessor implements ProcessStrategy {
+    
+        protected volatile ProcessStrategy processStrategy;
+        
+        public FilterProcessor(ProcessStrategy processStrategy){
+            this.processStrategy = processStrategy;
+        }
+        
+        @Override
+        public void doProcess(Page page) {
+            processStrategy.doProcess(page);
+        }
+    }
+```
+可以看到，FilterProcessor 是一个伪实现，就是什么都没干，只是用于标识装饰器的，真正的装饰器类需要继承 FilterProcessor 并自己实现：
+
+### 重头戏 IteratorProcessor
+
+
+
+
+
+
