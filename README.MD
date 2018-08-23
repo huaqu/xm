@@ -501,10 +501,6 @@ public class IteratorProcessor extends FilterProcessor {
 > Observable.java
 
 ``` java 
-/**
- * java.util.Observable 不是一个好的设计。如果需要拥有Observable功能而去
- * 继承一个类的话，代价太沉重。我重新设计的接口，留给具体的类去实现。
- */
 public interface Observable {
     //增加一个观察者
     void addObserver(Observer o);
