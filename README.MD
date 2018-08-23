@@ -209,7 +209,7 @@ public class DefaultSpider implements PageProcessor {
 你的同事需要在爬虫开始的时候，更新数据库中的一条数据，并且需要在爬完之后记录一条日志，
 可是你有没有实现这些功能，怎么办呢？
 
-你的同事只需要继承DefaultSpider类，然后自己实现上面这两个方法，就可以了。
+你的同事只需要继承DefaultSpider类，然后自己重写上面这两个方法，就可以了。
 
 这样做的好处就是可以不用修改你原先的爬虫逻辑，免得改出bug了不是？
 
@@ -279,3 +279,81 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 下一步，我们将具体实现如何对单个页面进行解析。
 
     git checkout step-3-onebook-implement
+    
+# 第三步：单个图书页面的爬取
+
+    git checkout step-3-onebook-implement
+
+我们的目标是将图书的名字，封面图片还有豆瓣评分，这三个数据爬取到。
+前面我们说过，爬取到的数据可以通过调用
+>   page.putField()
+
+将结果存储起来，等待Pipeline去处理。这里给出一条建议：
+
+>   如果需要处理的数据超过两条，那么将他们封装成一个model吧！
+
+于是，我们创建了 OriginBook.java 类，用来封装图书数据。
+
+我们随便打开一个豆瓣上的图书页面，分析它的网页结构，在这里不详细叙述如何分析一个html页面，
+如果你对这一块有疑问，建议学习一下DOM元素的选取。
+
+在分析完毕之后，相应的使用css或者xpath语法去抓取DOM元素就可以了。这里不再赘述css和xpath的具体语法，这不是我们的重点。
+基本思路就是寻找有唯一表示的div，根据class一层层定位（最好直接根据id定位，因为id是唯一的），最后找到想要的元素和属性。
+你一定要自己完成html的分析以及对你感兴趣的数据的提取工作。
+主要的代码在这里：
+
+``` java
+public class OneBookProcessor implements ProcessStrategy {
+
+    ...
+    
+    protected String parseName(Page page) {
+        return page.getHtml().xpath("//div[@id='wrapper']/h1/span/text()").toString();
+    }
+    
+    protected String parseImg(Page page) {
+        return page.getHtml().xpath("//div[@id='mainpic']/a/img/@src").toString();
+    }
+    
+    protected int parseScore(Page page) {
+        try {
+            String score = page.getHtml().xpath(
+              "//div[@id='interest_sectl']//strong[contains(@class, 'll') and contains(@class, 'rating_num')]/text()")
+              .toString();
+            score = score.replaceAll("[\\s|\\u00A0.]", "");
+            return Integer.valueOf(score);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+    
+    ...
+    
+```
+### CallablePipeline.java
+我们自定义了一个 CallablePipeline.java ，用来返回一个 Object 类型的结果。
+
+考虑到：有些逻辑不适合写到 Pipeline 中，
+而且 Pipeline 不一定会完全将结果消费掉，这时我们会希望得到 Pipeline 中的结果，然后对结果单独处理。
+webmagic认为我们应该在 Pipeline 中完全消费掉结果（存到数据库，或者存到文件等等），
+但是很多时候我们无法做到，比如我们期待把这个结果返回到一个页面，
+由一个工作人员确认爬取的信息无误，再将结果插入数据库。所以我们让 CallablePipeline 继承 Pipeline ，
+并扩展了一个 getResult 方法，相当于告诉 Pipeline ：我把结果取出来交给别人，你去忙你的吧！。这样，我们可以随时从 Pipeline 中获取一个结果。
+
+但是这里有更加优雅的做法！我们之后会展示。
+
+现在我们调用 SpiderService 中的` getLotsOfBooks() `，传入一个豆瓣图书的url，就可以获得一个爬取到的书籍数据了！是不是很棒！
+
+### 阶段总结：
+这一步里，使用到了**策略模式**，我们将具体爬取数据的逻辑，与上层调用的逻辑，比较彻底的解耦了。SpiderService 持有了一个 DefaultSpider，
+而DefaultSpider里面没有具体的实现，具体的实现由 OneBookProcessor 完成。OneBookProcessor 专注于书籍页面的解析算法，
+DefaultSpider 负责使用这个算法，并设置爬虫的各种性质。如果你的同事有了新的更快更高效的书籍信息提取算法XXXProcessor，
+只要实现了 ProcessStrategy ，就可以很方便的替换掉DefaultSpider里面的算法，而 DefaultSpider 一句代码也不用改。
+当然，好处不仅仅只有这些。接下来你能看到。
+
+# 我们希望所有的代码你都有亲自去实现，这是最关键的一步。
+
+下一步，我们将实现爬虫的迭代爬取功能：
+
+    git checkout step-4-books-iterator
+
