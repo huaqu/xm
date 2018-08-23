@@ -330,13 +330,15 @@ public class OneBookProcessor implements ProcessStrategy {
     ...
     
 ```
+### CallablePipeline.java
+我们自定义了一个 CallablePipeline.java ，用来返回一个 Object 类型的结果。
 
-我们自定义了一个 CallablePipeline.java ，用来返回一个 Object 类型的结果。考虑到：有些逻辑不适合写到 Pipeline 中，
+考虑到：有些逻辑不适合写到 Pipeline 中，
 而且 Pipeline 不一定会完全将结果消费掉，这时我们会希望得到 Pipeline 中的结果，然后对结果单独处理。
 webmagic认为我们应该在 Pipeline 中完全消费掉结果（存到数据库，或者存到文件等等），
-但是很多时候我们无法简单的在 Pipeline 中将结果消费掉，比如我们期待把这个结果返回到一个页面，
+但是很多时候我们无法做到，比如我们期待把这个结果返回到一个页面，
 由一个工作人员确认爬取的信息无误，再将结果插入数据库。所以我们让 CallablePipeline 继承 Pipeline ，
-并扩展了一个 getResult 方法。这样，我们可以随时从 Pipeline 中获取一个结果。
+并扩展了一个 getResult 方法，相当于告诉 Pipeline ：我把结果取出来交给别人，你去忙你的吧！。这样，我们可以随时从 Pipeline 中获取一个结果。
 
 但是这里有更加优雅的做法！我们之后会展示。
 
