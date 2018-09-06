@@ -21,6 +21,14 @@
 
 **如果你还不了解上述的这些知识，去看书复习一下吧，花不了多久！**
 
+## 步骤：
+
+* [step-1-project-framework: 搭建项目框架](https://git.nowcoder.com/11000160/spider/tags/step-1-project-framework)
+* [step-2-framework-extension: 策略模式对原框架做拓展](https://git.nowcoder.com/11000160/spider/tags/step-2-framework-extension)
+* [step-3-onebook-implement: 完成单一页面的爬取](https://git.nowcoder.com/11000160/spider/tags/step-3-onebook-implement)
+* [step-4-books-iterator: 装饰器模式扩展](https://git.nowcoder.com/11000160/spider/tags/step-4-books-iterator)
+* [step-5-pipeline-extension: 使用观察者模式对Pipeline做扩展](https://git.nowcoder.com/11000160/spider/tags/step-5-pipeline-extension)
+
 ## 那我们开始吧！
 
 # 第一步：搭建项目框架
